@@ -1,0 +1,35 @@
+# algorithm for bubble sort in eta
+let swap = fn(arr, i, j) {
+  let tmp = arr[i];
+  arr[i] = arr[j];
+  arr[j] = tmp;
+}
+
+let sort = fn(arr) {
+  for(let i = 0; i < len(arr) - 1; i += 1) {
+    let swapped = false;
+    for(let j = 0; j < len(arr) - i - 1; j += 1) {
+      if(arr[j] > arr[j + 1]) {
+        swap(arr, j, j + 1);
+        swapped = true;
+      }
+    }
+
+    if(!swapped) {
+      return;
+    }
+  }
+}
+
+print("size: ")
+let size = readint();
+
+let arr = [];
+for(let i = 0; i < size; i += 1) {
+  print("element ", i, ": ");
+  push(arr, readint());
+}
+
+println("entered array: ", arr);
+sort(arr);
+println("sorted array: ", arr);
