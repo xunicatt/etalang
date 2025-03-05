@@ -10,6 +10,7 @@ set_variable(
     srcs,
     dependencies: [
       objects_dep,
+      tokens_dep,
       ut_dep,
     ],
   ),

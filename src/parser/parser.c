@@ -51,6 +51,7 @@ parser_init(struct parser* const self, struct lexer* const lexer) {
   map_prefixfns_add(TFOR, pforexp);
   map_prefixfns_add(TFUNC, pfnexp);
   map_prefixfns_add(TOSQR, parraylit);
+  map_prefixfns_add(TEXTERN, pexternexp);
 
   map_infixfns_add(TADD, pinfixexp);
   map_infixfns_add(TSUB, pinfixexp);

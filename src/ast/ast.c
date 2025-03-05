@@ -41,6 +41,7 @@ statement_free(struct statement *self) {
     }
 
     default:
+      return;
   }
 }
 
@@ -203,6 +204,14 @@ expression_free(struct expression *self) {
       expression_free(expr->right);
       free(expr->right);
       return;
+    }
+
+    case NEXTERNEXP: {
+      struct externexp *expr = &self->externexp;
+      free(expr->identifier);
+      if(expr->argumenttypes != NULL) {
+        utarray_free(expr->argumenttypes);
+      }
     }
 
     default:
@@ -462,6 +471,31 @@ program_free(struct program *self) {
         utstring_free(lsub);
         utstring_free(rsub);
 
+        return result;
+      }
+
+      case NEXTERNEXP: {
+        UT_string *argumenttypestr;
+        utstring_new(argumenttypestr);
+        utstring_printf(argumenttypestr, "[");
+        for(size_t i = 0; i < utarray_len(self->externexp.argumenttypes); i++) {
+          enum tokenkind type = *(enum tokenkind*)utarray_eltptr(self->externexp.argumenttypes, i);
+          utstring_printf(
+            argumenttypestr,
+            "%s%s",
+            tokenname(type),
+            i < utarray_len(self->externexp.argumenttypes) - 1 ? ", " : ""
+          );
+        }
+        utstring_printf(argumenttypestr, "]");
+        utstring_printf(
+          result,
+          "{extern: {function-name: %s, return-type: %s, argument-type: %s}}",
+          self->externexp.identifier,
+          tokenname(self->externexp.returntype),
+          utstring_body(argumenttypestr)
+        );
+        utstring_free(argumenttypestr);
         return result;
       }
 

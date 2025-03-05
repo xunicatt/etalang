@@ -9,6 +9,7 @@
 #ifndef __OBJECTS_H__
 #define __OBJECTS_H__
 
+#include <tokens.h>
 #include <stdint.h>
 #include <utstring.h>
 #include <utarray.h>
@@ -26,6 +27,7 @@ enum objectkind {
   ODETAILEDERROR,
   OFUNCTION,
   OBUILTINFUNCTION,
+  OEXTERNALFUNCTION,
   __OBJECTTYPECOUNT__,
 };
 
@@ -79,6 +81,13 @@ struct builtinfn {
   builtinfn fn;
 };
 
+struct externalfn {
+  void *fn;
+  char *identifier;
+  UT_array *argumenttypes;
+  enum tokenkind returntype;
+};
+
 struct object {
   enum objectkind kind;
   union {
@@ -93,6 +102,7 @@ struct object {
     struct detailederror detailederror;
     struct functionobj functionobj;
     struct builtinfn builtinfunction;
+    struct externalfn externalfunction;
   };
 };
 

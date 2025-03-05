@@ -6,6 +6,7 @@
 **  File: expressions.h
 */
 
+#include <utstring.h>
 #include <precedences.h>
 #include <stdio.h>
 #include <tokens.h>
@@ -21,6 +22,7 @@
 
 static UT_icd expression_icd = {sizeof(struct expression*), NULL, NULL, NULL};
 static UT_icd identifierexp_icd = {sizeof(struct identifierexp*), NULL, NULL, NULL};
+static UT_icd tokenkind_icd = {sizeof(enum tokenkind), NULL, NULL, NULL};
 
 struct expression*
 pexpression(struct parser* const self, enum precedence p) {
@@ -594,6 +596,79 @@ cleanup:
     free(*identifier);
   }
   utarray_free(identifiers);
+  return NULL;
+}
+
+struct expression*
+pexternexp(struct parser* const self) {
+  if(peektoken(self->lexer) != TFUNC) {
+    error(self, "expected function");
+    return NULL;
+  }
+
+  token(self->lexer); //get fn
+  if(peektoken(self->lexer) != TIDENTIFIER) {
+    error(self, "expectted identifier");
+    return NULL;
+  }
+
+  token(self->lexer); //get identifier
+  struct expression *expr = (struct expression*)calloc(1, sizeof(struct expression));
+  expr->kind = NEXTERNEXP;
+  steal(expr->externexp.identifier, self->lexer->value.valstring);
+  utarray_new(expr->externexp.argumenttypes, &tokenkind_icd);
+
+  if(peektoken(self->lexer) != TOPAREN) {
+    error(self, "expected (");
+    goto cleanup;
+  }
+
+  token(self->lexer); //get (
+  if(peektoken(self->lexer) != TCPAREN) {
+    while(true) {
+      enum tokenkind type = peektoken(self->lexer);
+      if(type != TTINT && type != TTFLOAT && type != TTBOOL && type != TTSTRING) {
+        error(self, "expected a type");
+        goto cleanup;
+      }
+
+      token(self->lexer); //get the type
+      utarray_push_back(expr->externexp.argumenttypes, &type);
+
+      token(self->lexer); //fetch next token
+      if(lasttoken(self->lexer) == TCPAREN) {
+        break;
+      }
+
+      if(lasttoken(self->lexer) != TCOMMA) {
+        error(self, "expected , or )");
+        goto cleanup;
+      }
+    }
+  } else {
+    token(self->lexer); //get )
+  }
+
+  if(peektoken(self->lexer) != TCOLON) {
+    error(self, "expected :");
+    goto cleanup;
+  }
+
+  token(self->lexer); //get :
+  enum tokenkind type = peektoken(self->lexer);
+  if(type != TTINT && type != TTFLOAT && type != TTBOOL && type != TTSTRING) {
+    error(self, "expected a return type");
+    goto cleanup;
+  }
+
+  token(self->lexer);
+  expr->externexp.returntype = type;
+
+  return expr;
+
+cleanup:
+  expression_free(expr);
+  free(expr);
   return NULL;
 }
 

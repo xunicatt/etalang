@@ -11,6 +11,7 @@ set_variable(
     name,
     srcs,
     dependencies: [
+      tokens_dep,
       objects_dep,
       gc_dep,
       ut_dep,

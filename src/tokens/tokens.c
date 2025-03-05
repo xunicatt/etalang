@@ -33,6 +33,12 @@ static const char * const tokenstr[__TOKENCOUNT__] = {
   [TSTRING] = "string",
   [TBOOL] = "bool",
 
+  [TTVOID] = "void",
+  [TTINT] = "int",
+  [TTFLOAT] = "float",
+  [TTSTRING] = "string",
+  [TTBOOL] = "bool",
+
   [TOPAREN] = "(",
   [TCPAREN] = ")",
   [TOCURLY] = "{",

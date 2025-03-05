@@ -29,10 +29,18 @@ enum tokenkind {
   TLET,
   TNULL,
 
+  // values
   TINT,
   TFLOAT,
-  TSTRING,
   TBOOL,
+  TSTRING,
+
+  // types
+  TTVOID,
+  TTINT,
+  TTFLOAT,
+  TTSTRING,
+  TTBOOL,
 
   TOPAREN,
   TCPAREN,

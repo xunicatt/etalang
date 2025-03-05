@@ -49,9 +49,9 @@ blen(const UT_array *args) {
 }
 
 struct object*
-btype(const UT_array *args) {
+btypeof(const UT_array *args) {
   if(utarray_len(args) != 1) {
-    return serror("type(...) only accepts 1 argument");
+    return serror("typeof(...) only accepts 1 argument");
   }
 
   struct object **obj = utarray_front(args);
@@ -63,9 +63,9 @@ btype(const UT_array *args) {
 }
 
 struct object*
-bint(const UT_array *args) {
+btoint(const UT_array *args) {
   if(utarray_len(args) != 1) {
-    return serror("int(...) only accepts 1 argument");
+    return serror("toint(...) only accepts 1 argument");
   }
 
   struct object *obj = *(struct object **)utarray_front(args);
@@ -95,9 +95,9 @@ bint(const UT_array *args) {
 }
 
 struct object*
-bfloat(const UT_array *args) {
+btofloat(const UT_array *args) {
   if(utarray_len(args) != 1) {
-    return serror("float(...) only accepts 1 argument");
+    return serror("tofloat(...) only accepts 1 argument");
   }
 
   struct object *obj = *(struct object **)utarray_front(args);

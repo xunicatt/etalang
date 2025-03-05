@@ -9,9 +9,9 @@ project(
 )
 
 if get_option('buildtype') == 'debug'
-  add_project_arguments('-DLEXER_DEBUG_ENABLE', language: 'c')
+  #add_project_arguments('-DLEXER_DEBUG_ENABLE', language: 'c')
   add_project_arguments('-DPARSER_DEBUG_ENABLE', language: 'c')
-  add_project_arguments('-DGC_DEBUG_ENABLE', language: 'c')
+  #add_project_arguments('-DGC_DEBUG_ENABLE', language: 'c')
 endif
 
 subdir('src/ut')

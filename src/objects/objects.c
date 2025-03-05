@@ -28,6 +28,7 @@ const char* const objectstr[__OBJECTTYPECOUNT__] = {
   [ODETAILEDERROR] = "error",
   [OFUNCTION] = "function",
   [OBUILTINFUNCTION] = "builtin function",
+  [OEXTERNALFUNCTION] = "external function",
 };
 
 const char*
@@ -106,6 +107,7 @@ object_tostr(const struct object * const obj) {
     }
 
     case OFUNCTION:
+    case OEXTERNALFUNCTION:
     case OBUILTINFUNCTION: {
       utstring_printf(res, "function");
       return res;
@@ -155,6 +157,13 @@ object_destroy(struct object* const self) {
       utarray_free(self->functionobj.parameters);
       blockstatement_free(self->functionobj.body);
       free(self->functionobj.body);
+      return;
+    }
+
+    case OEXTERNALFUNCTION: {
+      utarray_free(self->externalfunction.argumenttypes);
+      free(self->externalfunction.identifier);
+      return;
     }
 
     default:

@@ -6,8 +6,10 @@
 **  File: expressions.c
 */
 
+#include <dlfcn.h>
 #include <lexer.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -21,10 +23,15 @@
 #include <gc.h>
 #include <core.h>
 #include <builtins.h>
+#include <ffi.h>
 
 extern struct object *OBJECT_NULL;
 extern struct object *OBJECT_TRUE;
 extern struct object *OBJECT_FALSE;
+
+extern void *lib_c_handle;
+
+typedef int (*random_cstr_int_func)(const char*);
 
 static UT_icd object_icd = {sizeof(struct object*), NULL, NULL, NULL};
 
@@ -57,6 +64,7 @@ static bool isvaltruthy(const struct object*);
 
 static struct object* efunction(struct eval*, const struct functionobj*, const struct location*, UT_array*);
 static struct object* ebuiltinfunction(struct eval*, const struct builtinfn*, const struct location*, UT_array*);
+static struct object* eexternalfunction(struct eval*, const struct externalfn*, const struct location*, UT_array*);
 static struct object* ecallexp(struct eval*, const struct callexp*);
 
 struct object*
@@ -112,6 +120,25 @@ eexpression(struct eval *self, struct expression *expr) {
 
   case NCALLEXP: {
     return ecallexp(self, &expr->callexp);
+  }
+
+  case NEXTERNEXP: {
+    struct externexp *externexp = &expr->externexp;
+    void *fn = dlsym(lib_c_handle, externexp->identifier);
+    if(dlerror()) {
+      DERROR(self, &expr->externexp.location, "external function not found");
+    }
+
+    struct object *res = gc_alloc();
+    res->kind = OEXTERNALFUNCTION;
+    steal(res->externalfunction.argumenttypes, externexp->argumenttypes);
+    steal(res->externalfunction.identifier, externexp->identifier);
+    res->externalfunction.returntype = externexp->returntype;
+    steal(res->externalfunction.fn, fn);
+
+    gc_borrow(res);
+    scope_set(self->scope, res->externalfunction.identifier, res);
+    return res;
   }
 
   default:
@@ -885,6 +912,58 @@ cleanup:
   return ret;
 }
 
+static bool istypesame(enum tokenkind a, enum objectkind b) {
+  if(a == TTINT && b == OINT) return true;
+  if(a == TTFLOAT && b == OFLOAT) return true;
+  if(a == TTBOOL && b == OBOOL) return true;
+  if(a == TTSTRING && b == OSTRING) return true;
+  return false;
+}
+
+static struct object*
+eexternalfunction(struct eval *self, const struct externalfn *func, const struct location *loc, UT_array *args) {
+  UT_array *argobjs;
+  struct object *ret = OBJECT_NULL;
+
+  utarray_new(argobjs, &object_icd);
+  for(size_t i = 0; i < utarray_len(args); i++) {
+    struct expression **argument = utarray_eltptr(args, i);
+    enum tokenkind type = *(enum tokenkind*)utarray_eltptr(func->argumenttypes, i);
+    struct object *arg = eexpression(self, *argument);
+    if(iserr(arg)) {
+      ret = arg;
+      goto cleanup;
+    }
+
+    if(!istypesame(type, arg->kind)) {
+      GETDERROR(ret, self, loc, "arguments types are not same");
+      gc_done(arg);
+      goto cleanup;
+    }
+
+    utarray_push_back(argobjs, &arg);
+  }
+
+  void *values[] = {};
+  ffi_cif cif;
+  ffi_call(&cif, FFI_FN(func->fn), NULL, values);
+  if(iserr(ret) && ret->kind == OSIMPLEERROR) {
+    struct object *derr = derror(self, loc, &ret->simpleerror);
+    gc_done(ret);
+    ret = derr;
+  }
+
+cleanup:
+  while(utarray_len(argobjs)) {
+    struct object **arg = utarray_back(argobjs);
+    utarray_pop_back(argobjs);
+    gc_done(*arg);
+  }
+  utarray_free(argobjs);
+
+  return ret;
+}
+
 static struct object*
 ecallexp(struct eval *self, const struct callexp *expr) {
   struct object *func = eexpression(self, expr->function);
@@ -901,6 +980,11 @@ ecallexp(struct eval *self, const struct callexp *expr) {
 
     case OBUILTINFUNCTION: {
       res = ebuiltinfunction(self, &func->builtinfunction, &expr->function->arraylit.location, expr->arguments);
+      break;
+    }
+
+    case OEXTERNALFUNCTION: {
+      res = eexternalfunction(self, &func->externalfunction, &expr->function->arraylit.location, expr->arguments);
       break;
     }
 

@@ -50,6 +50,7 @@ struct expression* pifexp(struct parser* const);
 struct expression* pforexp(struct parser* const);
 struct expression* pfnexp(struct parser* const);
 struct expression* pcallexp(struct parser* const, struct expression*);
+struct expression* pexternexp(struct parser* const);
 
 enum precedence ppeekprec(struct parser* const);
 enum precedence pcurrprec(struct parser* const);

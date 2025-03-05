@@ -28,14 +28,19 @@ map_keywords_init(void) {
   add("if", TIF);
   add("else", TELSE);
   add("for", TFOR);
-  add("break", TBREAK);
-  add("continue", TCONTINUE);
+  // add("break", TBREAK);
+  // add("continue", TCONTINUE);
   add("return", TRETURN);
-  add("switch", TSWITCH);
-  add("case", TCASE);
+  // add("switch", TSWITCH);
+  // add("case", TCASE);
   add("true", TBOOL);
   add("false", TBOOL);
-  add("struct", TSTRUCT);
+  // add("struct", TSTRUCT);
+  add("extern", TEXTERN);
+  add("int", TTINT);
+  add("float", TTFLOAT);
+  add("bool", TTBOOL);
+  add("string", TTSTRING);
   add("null", TNULL);
 }
 

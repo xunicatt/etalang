@@ -20,9 +20,9 @@ struct object* estatement(struct eval*, const struct statement*);
 struct object* eexpression(struct eval*, struct expression*);
 
 struct object* blen(const UT_array*);
-struct object* btype(const UT_array*);
-struct object* bint(const UT_array*);
-struct object* bfloat(const UT_array*);
+struct object* btypeof(const UT_array*);
+struct object* btoint(const UT_array*);
+struct object* btofloat(const UT_array*);
 struct object* bprint(const UT_array*);
 struct object* bprintln(const UT_array*);
 struct object* bpush(const UT_array*);

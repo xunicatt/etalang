@@ -21,6 +21,8 @@
 #include <objects.h>
 #include <gc.h>
 #include <eval.h>
+#include <dlfcn.h>
+#include <ffi.h>
 
 #define HELPER "etalang repl -- type '.help' for help"
 #define PROMPT ">> "
@@ -34,9 +36,14 @@
 struct object *OBJECT_NULL = &(struct object){.kind = ONULL};
 struct object *OBJECT_FALSE = &(struct object){.kind = OBOOL, .boolobj = {false}};
 struct object *OBJECT_TRUE = &(struct object){.kind = OBOOL, .boolobj = {true}};
+void *lib_c_handle = NULL;
 
 void
 repl() {
+  if((lib_c_handle = dlopen("libc.so.6", RTLD_LAZY)) == NULL) {
+    fprintf(stderr, "failed to load 'libc.so.6'\n");
+  }
+
   printf("\e[32m" HELPER "\n");
   printf(VERSION_STR "\e[0m\n");
   UT_string* line;

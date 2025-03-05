@@ -35,6 +35,7 @@ enum nodekind {
   NCALLEXP,
   NINDEXEXP,
   NOPASSIGNMENTEXP,
+  NEXTERNEXP,
   NLETSTATEMENT,
   NBLOCKSTATEMENT,
   NRETURNSTATEMENT,
@@ -157,6 +158,14 @@ struct opassignmentexp {
   struct expression *right;
 };
 
+struct externexp {
+  enum nodekind kind;
+  struct location location;
+  enum tokenkind returntype;
+  char *identifier;
+  UT_array *argumenttypes; //token_icd
+};
+
 struct expression {
   enum nodekind kind;
   union {
@@ -176,6 +185,7 @@ struct expression {
     struct callexp callexp;
     struct indexexp indexexp;
     struct opassignmentexp opassignmentexp;
+    struct externexp externexp;
   };
 };
 
