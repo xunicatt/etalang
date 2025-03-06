@@ -125,7 +125,7 @@ eexpression(struct eval *self, struct expression *expr) {
   case NEXTERNEXP: {
     struct externexp *externexp = &expr->externexp;
     void *fn = dlsym(lib_c_handle, externexp->identifier);
-    if(dlerror()) {
+    if(lib_c_handle == NULL || dlerror()) {
       DERROR(self, &expr->externexp.location, "external function not found");
     }
 

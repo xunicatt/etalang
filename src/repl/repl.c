@@ -24,6 +24,14 @@
 #include <dlfcn.h>
 #include <ffi.h>
 
+#ifdef __linux__
+  #define LIB_C "libc.so.6"
+#elif __APPLE__
+  #define LIB_C "libSystem.B.dylib"
+#else
+  #error "platform not supported"
+#endif
+
 #define HELPER "etalang repl -- type '.help' for help"
 #define PROMPT ">> "
 #define VERSION_STR "v0.0.1"
@@ -40,8 +48,9 @@ void *lib_c_handle = NULL;
 
 void
 repl() {
-  if((lib_c_handle = dlopen("libc.so.6", RTLD_LAZY)) == NULL) {
-    fprintf(stderr, "failed to load 'libc.so.6'\n");
+  // [TODO]: Handling loading of libC library
+  if((lib_c_handle = dlopen(LIB_C, RTLD_LAZY)) == NULL) {
+    fprintf(stderr, "failed to load '" LIB_C "'\n");
   }
 
   printf("\e[32m" HELPER "\n");

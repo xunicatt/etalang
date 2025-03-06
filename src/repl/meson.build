@@ -2,6 +2,8 @@
 name = 'repl'
 srcs = ['repl.c']
 
+libffi_dep = dependency('libffi', fallback: ['libffi'])
+
 # presets
 set_variable(
   name + '_lib',
@@ -9,6 +11,7 @@ set_variable(
     name,
     srcs,
     dependencies: [
+      libffi_dep,
       tokens_dep,
       ast_dep,
       lexer_dep,

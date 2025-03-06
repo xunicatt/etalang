@@ -219,6 +219,7 @@ bslice(const UT_array *args) {
       }
 
       default:
+        break;
     }
   }
 

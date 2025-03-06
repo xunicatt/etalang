@@ -370,7 +370,7 @@ fmterror(struct lexer* const self, const struct location _loc, const char* msg) 
 }
 
 void
-lexer_deinit(struct lexer* const) {
+lexer_deinit(struct lexer* const lexer) {
   map_keywords_deinit();
   map_specialchars_deinit();
 }

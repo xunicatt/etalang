@@ -34,5 +34,5 @@ executable(
     repl_dep,
     exec_dep,
   ],
-  link_args: '-lm',
+  link_args: ['-lm'],
 )
