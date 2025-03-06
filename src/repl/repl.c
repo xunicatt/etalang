@@ -51,6 +51,21 @@ repl() {
   // [TODO]: Handling loading of libC library
   if((lib_c_handle = dlopen(LIB_C, RTLD_LAZY)) == NULL) {
     fprintf(stderr, "failed to load '" LIB_C "'\n");
+  } else {
+    // CALLING EXTERNAL FUNC
+    char *arg = "Hello, World\n";
+    void *fn = dlsym(lib_c_handle, "printf");
+    ffi_type *argtypes[] = {&ffi_type_pointer};
+    ffi_cif cif;
+    ffi_status status = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, &ffi_type_sint, argtypes);
+    if(status != FFI_OK) {
+      fprintf(stderr, "failed to prep_cif: %d\n", status);
+      return;
+    }
+    int rettype;
+    void *argval[] = {&arg};
+    ffi_call(&cif, fn, &rettype, argval);
+    printf("ret val: %d\n", rettype);
   }
 
   printf("\e[32m" HELPER "\n");
