@@ -122,18 +122,22 @@ eexpression(struct eval *self, struct expression *expr) {
 
   case NEXTERNEXP: {
     struct externexp *externexp = &expr->externexp;
+    if(scope_exists(self->scope, externexp->funcname)) {
+      DERROR(self, &externexp->funcloc, "a function already exists with same name");
+    }
+
     if(!scope_existsany(self->scope, externexp->libname)) {
-      DERROR(self, &externexp->location, "undefined identifier");
+      DERROR(self, &externexp->libloc, "undefined identifier");
     }
 
     struct object *lib = scope_get(self->scope, externexp->libname);
     if(lib->kind != OEXTERNALLIBRARY) {
-      DERROR(self, &externexp->location, "expected a 'library' type");
+      DERROR(self, &externexp->libloc, "expected a 'library' type");
     }
 
     void *fn = dlsym(lib->externallibrary.lib, externexp->funcname);
     if(dlerror()) {
-      DERROR(self, &expr->externexp.location, "external function not found");
+      DERROR(self, &expr->externexp.funcloc, "external function not found");
     }
 
     struct object *res = gc_alloc();

@@ -603,12 +603,14 @@ struct expression*
 pexternexp(struct parser* const self) {
   struct expression *expr = (struct expression*)calloc(1, sizeof(struct expression));
   expr->kind = NEXTERNEXP;
+  expr->externexp.location = lastlocation(self->lexer);
 
   if(peektoken(self->lexer) != TIDENTIFIER) {
     error(self, "expected identifier");
     goto cleanup;
   }
 
+  expr->externexp.libloc = location(self->lexer);
   token(self->lexer); //get libname
   steal(expr->externexp.libname, self->lexer->value.valstring);
 
@@ -623,6 +625,7 @@ pexternexp(struct parser* const self) {
     goto cleanup;
   }
 
+  expr->externexp.funcloc = location(self->lexer);
   token(self->lexer); //get identifier
   steal(expr->externexp.funcname, self->lexer->value.valstring);
   utarray_new(expr->externexp.argumenttypes, &tokenkind_icd);

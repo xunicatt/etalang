@@ -2,7 +2,6 @@ if(os() == "linux") {
   let libc = load("libc.so.6");
   let libm = load("libm.so.6");
 
-
   extern libc fn printf(string, float): int;
   extern libm fn sqrt(float): float;
   extern libc fn strlen(string): int;

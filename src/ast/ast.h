@@ -163,7 +163,9 @@ struct externexp {
   struct location location;
   enum tokenkind returntype;
   char *libname;
+  struct location libloc;
   char *funcname;
+  struct location funcloc;
   UT_array *argumenttypes; //token_icd
 };
 
