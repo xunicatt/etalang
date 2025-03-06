@@ -5,7 +5,10 @@ if(os() == "linux") {
 
   extern libc fn printf(string, float): int;
   extern libm fn sqrt(float): float;
+  extern libc fn strlen(string): int;
 
   let x = sqrt(25.5);
   printf("sqrt: %f\n", x);
+  let size = strlen("Hello, World!");
+  println(size);
 }
