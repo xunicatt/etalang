@@ -1,7 +1,7 @@
 project(
   'eta',
   'c',
-  version: 'v0.0.1',
+  version: 'v0.0.2',
   default_options: [
     'c_std=c11',
     'c_flags=-Wall -Wextra -Werror',

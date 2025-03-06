@@ -29,8 +29,6 @@ extern struct object *OBJECT_NULL;
 extern struct object *OBJECT_TRUE;
 extern struct object *OBJECT_FALSE;
 
-extern void *lib_c_handle;
-
 typedef int (*random_cstr_int_func)(const char*);
 
 static UT_icd object_icd = {sizeof(struct object*), NULL, NULL, NULL};
@@ -124,15 +122,24 @@ eexpression(struct eval *self, struct expression *expr) {
 
   case NEXTERNEXP: {
     struct externexp *externexp = &expr->externexp;
-    void *fn = dlsym(lib_c_handle, externexp->identifier);
-    if(lib_c_handle == NULL || dlerror()) {
+    if(!scope_existsany(self->scope, externexp->libname)) {
+      DERROR(self, &externexp->location, "undefined identifier");
+    }
+
+    struct object *lib = scope_get(self->scope, externexp->libname);
+    if(lib->kind != OEXTERNALLIBRARY) {
+      DERROR(self, &externexp->location, "expected a 'library' type");
+    }
+
+    void *fn = dlsym(lib->externallibrary.lib, externexp->funcname);
+    if(dlerror()) {
       DERROR(self, &expr->externexp.location, "external function not found");
     }
 
     struct object *res = gc_alloc();
     res->kind = OEXTERNALFUNCTION;
     steal(res->externalfunction.argumenttypes, externexp->argumenttypes);
-    steal(res->externalfunction.identifier, externexp->identifier);
+    steal(res->externalfunction.identifier, externexp->funcname);
     res->externalfunction.returntype = externexp->returntype;
     steal(res->externalfunction.fn, fn);
 
@@ -912,20 +919,62 @@ cleanup:
   return ret;
 }
 
-static bool istypesame(enum tokenkind a, enum objectkind b) {
-  if(a == TTINT && b == OINT) return true;
-  if(a == TTFLOAT && b == OFLOAT) return true;
-  if(a == TTBOOL && b == OBOOL) return true;
-  if(a == TTSTRING && b == OSTRING) return true;
-  return false;
+static enum objectkind abi_get_objectkind(enum tokenkind a) {
+  if(a == TTINT) return OINT;
+  if(a == TTFLOAT) return OFLOAT;
+  if(a == TTBOOL) return OBOOL;
+  if(a == TTSTRING) return OSTRING;
+  return ONULL;
+}
+
+static void*
+abi_get_value(struct object *o) {
+  switch(o->kind) {
+    case OINT:
+      return &o->integerobj.value;
+
+    case OFLOAT:
+      return &o->floatobj.value;
+
+    case OSTRING:
+      return &o->stringobj.value->d;
+
+    case OBOOL:
+      return &o->boolobj.value;
+
+    default:
+      return NULL;
+  }
+}
+
+static ffi_type*
+abi_get_ffitype(const struct object *o) {
+  switch(o->kind) {
+    case OINT:
+      return &ffi_type_sint;
+
+    case OFLOAT:
+      return &ffi_type_double;
+
+    case OSTRING:
+      return &ffi_type_pointer;
+
+    case OBOOL:
+      return &ffi_type_sint;
+
+    default:
+      return &ffi_type_void;
+  }
 }
 
 static struct object*
 eexternalfunction(struct eval *self, const struct externalfn *func, const struct location *loc, UT_array *args) {
-  UT_array *argobjs;
+  size_t len = utarray_len(args);
+  struct object *argsobj[len];
+  ffi_type *argstype[len];
+  void *argsval[len];
   struct object *ret = OBJECT_NULL;
 
-  utarray_new(argobjs, &object_icd);
   for(size_t i = 0; i < utarray_len(args); i++) {
     struct expression **argument = utarray_eltptr(args, i);
     enum tokenkind type = *(enum tokenkind*)utarray_eltptr(func->argumenttypes, i);
@@ -935,31 +984,35 @@ eexternalfunction(struct eval *self, const struct externalfn *func, const struct
       goto cleanup;
     }
 
-    if(!istypesame(type, arg->kind)) {
+    if(abi_get_objectkind(type) != arg->kind) {
       GETDERROR(ret, self, loc, "arguments types are not same");
       gc_done(arg);
       goto cleanup;
     }
 
-    utarray_push_back(argobjs, &arg);
+    argsobj[i] = arg;
+    argstype[i] = abi_get_ffitype(arg);
+    argsval[i] = abi_get_value(arg);
   }
 
-  void *values[] = {};
   ffi_cif cif;
-  ffi_call(&cif, FFI_FN(func->fn), NULL, values);
-  if(iserr(ret) && ret->kind == OSIMPLEERROR) {
-    struct object *derr = derror(self, loc, &ret->simpleerror);
-    gc_done(ret);
-    ret = derr;
+  ffi_type *rettype = abi_get_ffitype(&(struct object){.kind = abi_get_objectkind(func->returntype)});
+  ffi_status status = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, len, rettype, argstype);
+  if(status != FFI_OK) {
+    GETDERROR(ret, self, loc, "failed to ffi_prep_cif\n");
+    goto cleanup;
   }
+
+  ret = gc_alloc();
+  ret->kind = abi_get_objectkind(func->returntype);
+  void *x = abi_get_value(ret);
+
+  ffi_call(&cif, FFI_FN(func->fn), x, argsval);
 
 cleanup:
-  while(utarray_len(argobjs)) {
-    struct object **arg = utarray_back(argobjs);
-    utarray_pop_back(argobjs);
-    gc_done(*arg);
+  for(size_t i = 0; i < len; i++) {
+    gc_done(argsobj[i]);
   }
-  utarray_free(argobjs);
 
   return ret;
 }

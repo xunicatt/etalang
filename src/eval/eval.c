@@ -33,6 +33,8 @@ eval_init(struct eval *self, struct lexer *lexer, struct scope *scope) {
 
   map_builtinfn_init();
   map_builtinfn_add("len", blen);
+  map_builtinfn_add("load", bload);
+  map_builtinfn_add("os", bos);
   map_builtinfn_add("typeof", btypeof);
   map_builtinfn_add("toint", btoint);
   map_builtinfn_add("tofloat", btofloat);

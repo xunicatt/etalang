@@ -160,8 +160,27 @@ _token(struct lexer* const self) {
     size_t size = self->loc.cursor - self->lastloc.cursor;
     char *string = (char*)malloc(sizeof(char)*size);
     assert(string != NULL);
-    strncpy(string, self->data + self->lastloc.cursor + 1, size);
-    string[size - 1] = '\0';
+
+    size_t i = 0, j = self->lastloc.cursor + 1;
+    while(j < (self->lastloc.cursor + size)) {
+      if(self->data[j] ==  '\\' && j < (self->lastloc.cursor + size) - 1) {
+        switch(self->data[j + 1]) {
+          case 'n':
+            string[i++] = '\n';
+            j += 2;
+            break;
+
+          case 't':
+            string[i++] = '\t';
+            j += 2;
+            break;
+        }
+        continue;
+      }
+
+      string[i++] = self->data[j++];
+    }
+    string[i] = '\0';
 
     forward(self);
     self->value.valstring = string;

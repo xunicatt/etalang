@@ -162,7 +162,8 @@ struct externexp {
   enum nodekind kind;
   struct location location;
   enum tokenkind returntype;
-  char *identifier;
+  char *libname;
+  char *funcname;
   UT_array *argumenttypes; //token_icd
 };
 

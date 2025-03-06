@@ -6,7 +6,7 @@
 **                built for fun
 **  File: main.c
 **
-**  Interpreter Version: v0.0.1
+**  Interpreter Version: v0.0.2
 */
 
 #include <stdint.h>

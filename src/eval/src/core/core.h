@@ -21,6 +21,8 @@ struct object* eexpression(struct eval*, struct expression*);
 
 struct object* blen(const UT_array*);
 struct object* btypeof(const UT_array*);
+struct object* bload(const UT_array*);
+struct object* bos(const UT_array*);
 struct object* btoint(const UT_array*);
 struct object* btofloat(const UT_array*);
 struct object* bprint(const UT_array*);

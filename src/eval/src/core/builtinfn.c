@@ -15,10 +15,60 @@
 #include <stdio.h>
 #include <utarray.h>
 #include <inttypes.h>
+#include <dlfcn.h>
+
+#ifdef __linux__
+  #define OS "linux"
+#elif __APPLE__
+  #define OS "darwin"
+#else
+  #error "platfrom is not supported"
+#endif
 
 extern struct object *OBJECT_NULL;
 static UT_array* utarray_copy(const UT_array*, size_t, size_t);
 UT_icd object_icd = {sizeof(struct object*), NULL, NULL, NULL};
+
+struct object*
+bos(const UT_array *args) {
+  if(utarray_len(args) != 0) {
+    return serror("os() accepts no argument");
+  }
+
+  struct object *res = gc_alloc();
+  res->kind = OSTRING;
+  utstring_new(res->stringobj.value);
+  utstring_printf(res->stringobj.value, OS);
+  return res;
+}
+
+struct object*
+bload(const UT_array *args) {
+  if(utarray_len(args) != 1) {
+    return serror("load(...) only accepts 1 argument");
+  }
+
+  struct object *obj = *(struct object**)utarray_front(args);
+
+  if(obj->kind != OSTRING) {
+    return serror("expected string type as argument");
+  }
+
+  void *lib = dlopen(utstring_body(obj->stringobj.value), RTLD_LAZY);
+  if(lib == NULL) {
+    UT_string *serrstr;
+    utstring_new(serrstr);
+    utstring_printf(serrstr, "failed to load '%s'", utstring_body(obj->stringobj.value));
+    struct object *serr = serror(utstring_body(serrstr));
+    utstring_free(serrstr);
+    return serr;
+  }
+
+  struct object *res = gc_alloc();
+  res->kind = OEXTERNALLIBRARY;
+  res->externallibrary.lib = lib;
+  return res;
+}
 
 struct object*
 blen(const UT_array *args) {

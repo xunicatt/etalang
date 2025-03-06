@@ -19,15 +19,17 @@ eta <filename>.n #for file input
 
 ## inbuilt functions
 
+- load(...): `loads a dynamic library`
+- os(...): `get OS platform name, ex: "linux", "darwin"`
 - print(...): `prints elements to the console`
 - println(...): `same as print() but shift the cursor to new line`
 - len(...): `get the length for string and array type`
-- type(...): `returns the type in string format, ex: "int", "float", "string", "bool", "function"`
+- typeof(...): `returns the type in string format, ex: "int", "float", "string", "bool", "function"`
 - push(...): `pushes an element into an array`
 - pop(...): `pop an element from array`
 - slice(...): `can be used to copy a array by value or to slice an array, ex: slice(arr, 0, 2)`
-- int(...): `typecasts to int`
-- float(...): `typecasts to float`
+- toint(...): `typecasts to int`
+- tofloat(...): `typecasts to float`
 - readint(): `reads an integer from stdin`
 - readfloat(): `reads an float from stdin`
 - readstring(): `reads an string from stdin`

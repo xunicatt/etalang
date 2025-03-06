@@ -601,21 +601,30 @@ cleanup:
 
 struct expression*
 pexternexp(struct parser* const self) {
+  struct expression *expr = (struct expression*)calloc(1, sizeof(struct expression));
+  expr->kind = NEXTERNEXP;
+
+  if(peektoken(self->lexer) != TIDENTIFIER) {
+    error(self, "expected identifier");
+    goto cleanup;
+  }
+
+  token(self->lexer); //get libname
+  steal(expr->externexp.libname, self->lexer->value.valstring);
+
   if(peektoken(self->lexer) != TFUNC) {
     error(self, "expected function");
-    return NULL;
+    goto cleanup;
   }
 
   token(self->lexer); //get fn
   if(peektoken(self->lexer) != TIDENTIFIER) {
     error(self, "expectted identifier");
-    return NULL;
+    goto cleanup;
   }
 
   token(self->lexer); //get identifier
-  struct expression *expr = (struct expression*)calloc(1, sizeof(struct expression));
-  expr->kind = NEXTERNEXP;
-  steal(expr->externexp.identifier, self->lexer->value.valstring);
+  steal(expr->externexp.funcname, self->lexer->value.valstring);
   utarray_new(expr->externexp.argumenttypes, &tokenkind_icd);
 
   if(peektoken(self->lexer) != TOPAREN) {

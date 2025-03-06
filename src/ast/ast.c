@@ -208,7 +208,8 @@ expression_free(struct expression *self) {
 
     case NEXTERNEXP: {
       struct externexp *expr = &self->externexp;
-      free(expr->identifier);
+      free(expr->funcname);
+      free(expr->libname);
       if(expr->argumenttypes != NULL) {
         utarray_free(expr->argumenttypes);
       }
@@ -490,8 +491,9 @@ program_free(struct program *self) {
         utstring_printf(argumenttypestr, "]");
         utstring_printf(
           result,
-          "{extern: {function-name: %s, return-type: %s, argument-type: %s}}",
-          self->externexp.identifier,
+          "{extern: {lib-name: %s, func-name: %s, return-type: %s, argument-type: %s}}",
+          self->externexp.libname,
+          self->externexp.funcname,
           tokenname(self->externexp.returntype),
           utstring_body(argumenttypestr)
         );

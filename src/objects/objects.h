@@ -28,6 +28,7 @@ enum objectkind {
   OFUNCTION,
   OBUILTINFUNCTION,
   OEXTERNALFUNCTION,
+  OEXTERNALLIBRARY,
   __OBJECTTYPECOUNT__,
 };
 
@@ -88,6 +89,10 @@ struct externalfn {
   enum tokenkind returntype;
 };
 
+struct externallib {
+  void *lib;
+};
+
 struct object {
   enum objectkind kind;
   union {
@@ -103,6 +108,7 @@ struct object {
     struct functionobj functionobj;
     struct builtinfn builtinfunction;
     struct externalfn externalfunction;
+    struct externallib externallibrary;
   };
 };
 

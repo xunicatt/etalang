@@ -24,17 +24,9 @@
 #include <dlfcn.h>
 #include <ffi.h>
 
-#ifdef __linux__
-  #define LIB_C "libc.so.6"
-#elif __APPLE__
-  #define LIB_C "libSystem.B.dylib"
-#else
-  #error "platform not supported"
-#endif
-
 #define HELPER "etalang repl -- type '.help' for help"
 #define PROMPT ">> "
-#define VERSION_STR "v0.0.1"
+#define VERSION_STR "v0.0.2"
 #define HELP_MSG ".help  --- help\n" \
                 ".clear --- clear the terminal\n" \
                 ".ver   --- shows the eta version\n" \
@@ -48,26 +40,6 @@ void *lib_c_handle = NULL;
 
 void
 repl() {
-  // [TODO]: Handling loading of libC library
-  if((lib_c_handle = dlopen(LIB_C, RTLD_LAZY)) == NULL) {
-    fprintf(stderr, "failed to load '" LIB_C "'\n");
-  } else {
-    // CALLING EXTERNAL FUNC
-    char *arg = "Hello, World\n";
-    void *fn = dlsym(lib_c_handle, "printf");
-    ffi_type *argtypes[] = {&ffi_type_pointer};
-    ffi_cif cif;
-    ffi_status status = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, &ffi_type_sint, argtypes);
-    if(status != FFI_OK) {
-      fprintf(stderr, "failed to prep_cif: %d\n", status);
-      return;
-    }
-    int rettype;
-    void *argval[] = {&arg};
-    ffi_call(&cif, fn, &rettype, argval);
-    printf("ret val: %d\n", rettype);
-  }
-
   printf("\e[32m" HELPER "\n");
   printf(VERSION_STR "\e[0m\n");
   UT_string* line;

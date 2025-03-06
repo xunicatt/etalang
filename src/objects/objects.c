@@ -29,6 +29,7 @@ const char* const objectstr[__OBJECTTYPECOUNT__] = {
   [OFUNCTION] = "function",
   [OBUILTINFUNCTION] = "builtin function",
   [OEXTERNALFUNCTION] = "external function",
+  [OEXTERNALLIBRARY] = "external library",
 };
 
 const char*
@@ -110,6 +111,11 @@ object_tostr(const struct object * const obj) {
     case OEXTERNALFUNCTION:
     case OBUILTINFUNCTION: {
       utstring_printf(res, "function");
+      return res;
+    }
+
+    case OEXTERNALLIBRARY: {
+      utstring_printf(res, "library");
       return res;
     }
 

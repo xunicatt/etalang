@@ -1,0 +1,11 @@
+if(os() == "linux") {
+  let libc = load("libc.so.6");
+  let libm = load("libm.so.6");
+
+
+  extern libc fn printf(string, float): int;
+  extern libm fn sqrt(float): float;
+
+  let x = sqrt(25.5);
+  printf("sqrt: %f\n", x);
+}
