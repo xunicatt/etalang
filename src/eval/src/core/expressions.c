@@ -534,6 +534,10 @@ eassignment_identifier(
   }
 
   struct object *obj = scope_get(self->scope, ident->value);
+  if(obj->kind == OEXTERNALLIBRARY) {
+    DERROR(self, &ident->location, "a 'library' type variable cannot be reassigned");
+  }
+
   if(obj->kind == OFUNCTION || obj->kind == OBUILTINFUNCTION) {
     DERROR(self, &ident->location, "a 'function' type variable cannot be reassigned");
   }
