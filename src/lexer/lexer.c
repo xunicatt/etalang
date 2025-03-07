@@ -21,6 +21,7 @@
 
 static bool end(const struct lexer* const);
 static char currchar(const struct lexer* const);
+static char peekchar(const struct lexer* const);
 static void forward(struct lexer* const);
 static void pin(struct lexer* const);
 static void trim(struct lexer* const);
@@ -55,6 +56,12 @@ static char
 currchar(const struct lexer* const self) {
   if(end(self)) return 0;
   return self->data[self->loc.cursor];
+}
+
+static char
+peekchar(const struct lexer* const self) {
+  if(self->loc.cursor + 1 >= self->len) return 0;
+  return self->data[self->loc.cursor + 1];
 }
 
 static void
@@ -257,6 +264,17 @@ _token(struct lexer* const self) {
             finaltoken = TDVAS;
           }
           break;
+
+        case TDOT: {
+          if(nexttoken == TDOT && peekchar(self) == '.') {
+            forward(self);
+            finaltoken = TVARIADIC;
+          } else {
+            finaltoken = TRANGE;
+          }
+
+          break;
+        }
 
         default:
           break;

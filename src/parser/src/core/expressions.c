@@ -639,6 +639,19 @@ pexternexp(struct parser* const self) {
   if(peektoken(self->lexer) != TCPAREN) {
     while(true) {
       enum tokenkind type = peektoken(self->lexer);
+      if(type == TVARIADIC) {
+        token(self->lexer); //get the type
+        utarray_push_back(expr->externexp.argumenttypes, &type);
+
+        if(peektoken(self->lexer) != TCPAREN) {
+          error(self, "expected , or )");
+          goto cleanup;
+        }
+
+        token(self->lexer);
+        break;
+      }
+
       if(type != TTINT && type != TTFLOAT && type != TTBOOL && type != TTSTRING) {
         error(self, "expected a type");
         goto cleanup;

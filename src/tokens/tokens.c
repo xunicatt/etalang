@@ -68,6 +68,8 @@ static const char * const tokenstr[__TOKENCOUNT__] = {
   [TNEQL] = "!=",
   [TUNOT] = "~",
   [TNOT] = "!",
+  [TVARIADIC] = "...",
+  [TRANGE] = "..",
 
   [TADAS] = "+=",
   [TSBAS] = "-=",

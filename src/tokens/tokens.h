@@ -71,6 +71,8 @@ enum tokenkind {
   TNEQL,
   TUNOT,
   TNOT,
+  TVARIADIC,
+  TRANGE,
 
   TADAS,
   TSBAS,

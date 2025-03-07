@@ -973,22 +973,41 @@ abi_get_ffitype(const struct object *o) {
 
 static struct object*
 eexternalfunction(struct eval *self, const struct externalfn *func, const struct location *loc, UT_array *args) {
-  size_t len = utarray_len(args);
-  struct object *argsobj[len];
-  ffi_type *argstype[len];
-  void *argsval[len];
+  size_t argslen = utarray_len(args);
+  size_t argstypeslen = utarray_len(func->argumenttypes);
+
+  if(
+    argstypeslen > 0 &&
+    *(enum tokenkind*)utarray_back(func->argumenttypes) == TVARIADIC) {
+    if(argslen < argstypeslen - 1) {
+      DERROR(self, loc, "argument lengths are not same");
+    }
+  } else if(argstypeslen != argslen) {
+    DERROR(self, loc, "argument lengths are not same");
+  }
+
+  bool isvariadic = false;
+  struct object *argsobj[argslen];
+  ffi_type *argstype[argslen];
+  void *argsval[argslen];
   struct object *ret = OBJECT_NULL;
 
-  for(size_t i = 0; i < utarray_len(args); i++) {
+  for(size_t i = 0; i < argslen; i++) {
     struct expression **argument = utarray_eltptr(args, i);
-    enum tokenkind type = *(enum tokenkind*)utarray_eltptr(func->argumenttypes, i);
+    enum tokenkind type = TNONE;
+
+    if(!isvariadic &&
+      (type = *(enum tokenkind*)utarray_eltptr(func->argumenttypes, i)) == TVARIADIC) {
+      isvariadic = true;
+    }
+
     struct object *arg = eexpression(self, *argument);
     if(iserr(arg)) {
       ret = arg;
       goto cleanup;
     }
 
-    if(abi_get_objectkind(type) != arg->kind) {
+    if(!isvariadic && abi_get_objectkind(type) != arg->kind) {
       GETDERROR(ret, self, loc, "arguments types are not same");
       gc_done(arg);
       goto cleanup;
@@ -1001,7 +1020,21 @@ eexternalfunction(struct eval *self, const struct externalfn *func, const struct
 
   ffi_cif cif;
   ffi_type *rettype = abi_get_ffitype(&(struct object){.kind = abi_get_objectkind(func->returntype)});
-  ffi_status status = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, len, rettype, argstype);
+  ffi_status status;
+
+  if(isvariadic) {
+    status = ffi_prep_cif_var(
+      &cif,
+      FFI_DEFAULT_ABI,
+      argstypeslen - 1,
+      argslen,
+      rettype,
+      argstype
+    );
+  } else {
+    status = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, argslen, rettype, argstype);
+  }
+
   if(status != FFI_OK) {
     GETDERROR(ret, self, loc, "failed to ffi_prep_cif\n");
     goto cleanup;
@@ -1010,11 +1043,10 @@ eexternalfunction(struct eval *self, const struct externalfn *func, const struct
   ret = gc_alloc();
   ret->kind = abi_get_objectkind(func->returntype);
   void *x = abi_get_value(ret);
-
   ffi_call(&cif, FFI_FN(func->fn), x, argsval);
 
 cleanup:
-  for(size_t i = 0; i < len; i++) {
+  for(size_t i = 0; i < argslen; i++) {
     gc_done(argsobj[i]);
   }
 
