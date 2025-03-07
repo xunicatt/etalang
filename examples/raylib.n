@@ -1,0 +1,21 @@
+let raylib = load("libraylib.so");
+
+extern raylib fn InitWindow(int, int, string): void;
+extern raylib fn SetTargetFPS(int): void;
+extern raylib fn WindowShouldClose(): bool;
+extern raylib fn BeginDrawing(): void;
+extern raylib fn EndDrawing(): void;
+extern raylib fn CloseWindow(): void;
+
+let screenWidth = 800;
+let screenHeight = 450;
+
+InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
+SetTargetFPS(60);
+
+for(;!WindowShouldClose();) {
+  BeginDrawing();
+  EndDrawing();
+}
+
+CloseWindow();

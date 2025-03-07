@@ -681,7 +681,7 @@ pexternexp(struct parser* const self) {
 
   token(self->lexer); //get :
   enum tokenkind type = peektoken(self->lexer);
-  if(type != TTINT && type != TTFLOAT && type != TTBOOL && type != TTSTRING) {
+  if(type != TTVOID && type != TTINT && type != TTFLOAT && type != TTBOOL && type != TTSTRING) {
     error(self, "expected a return type");
     goto cleanup;
   }

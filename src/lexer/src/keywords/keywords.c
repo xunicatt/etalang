@@ -37,6 +37,7 @@ map_keywords_init(void) {
   add("false", TBOOL);
   // add("struct", TSTRUCT);
   add("extern", TEXTERN);
+  add("void", TTVOID);
   add("int", TTINT);
   add("float", TTFLOAT);
   add("bool", TTBOOL);

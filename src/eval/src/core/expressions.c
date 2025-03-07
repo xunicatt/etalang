@@ -1048,6 +1048,10 @@ eexternalfunction(struct eval *self, const struct externalfn *func, const struct
   ret->kind = abi_get_objectkind(func->returntype);
   void *x = abi_get_value(ret);
   ffi_call(&cif, FFI_FN(func->fn), x, argsval);
+  if(ret->kind == OBOOL) {
+    gc_done(ret);
+    ret = ret->boolobj.value ? OBJECT_TRUE : OBJECT_FALSE;
+  }
 
 cleanup:
   for(size_t i = 0; i < argslen; i++) {
