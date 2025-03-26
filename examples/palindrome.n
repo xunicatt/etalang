@@ -1,0 +1,24 @@
+# algorithm for checking if a string is palindrome in eta
+func is_palindrome(str) {
+  if len(str) == 0 {
+    return true;
+  }
+
+  let i = 0;
+  let j = len(str) - 1;
+
+  for ;i != j; {
+    if str[i] != str[j] {
+      return false;
+    }
+
+    i += 1;
+    j -= 1;
+  }
+
+  return true;
+}
+
+print('enter a string: ');
+let str = read_string();
+println(is_palindrome(str));

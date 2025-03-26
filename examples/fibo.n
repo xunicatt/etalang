@@ -1,0 +1,10 @@
+# algorithm for generating nth number in fibo series in eta
+func fibo(n) {
+  if n <= 1 {
+    return n;
+  }
+
+  return fibo(n - 1) + fibo(n - 2);
+}
+
+println(fibo(20));

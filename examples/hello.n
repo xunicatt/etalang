@@ -1,0 +1,69 @@
+# an basic introduction for eta-lang
+# this is a comment
+# variable declaration
+let i = 123; #integer
+let j = 46.5; #float
+let k = true; #bool
+let l = 'Hello, World!'; #string
+let m = null; # only one single time assignment
+
+# branch
+print('enter a number: ');
+if i > 100 {
+  i += 100;
+  m = read_float();
+} else {
+  i -= 100;
+  m = read_string();
+}
+
+# inbuilt functions [print, println, push, pop, len, type, slice]
+println(i);
+println(j);
+println(k);
+println(l);
+println(m, ' type of m: ', type_of(m));
+
+# array
+let arr_1 = [];
+let arr_2 = [];
+
+# function
+func range(arr, start, end) {
+  for let i = start; i < end; i += 1 {
+    push(arr, i);
+  }
+}
+
+range(arr_1, 0, 5); # mutates the array
+range(slice(arr_2), 0, 5); # slice create a new copy and passes it
+
+println(arr_1, ' ', arr_2);
+arr_2 = slice(arr_1, 0, len(arr_1) - 2);
+arr_2[0] = range; # arrays are mixed type
+arr_2[0](arr_2, 0, len(arr_2));
+println(arr_2);
+
+# another function to reverse a string
+func reverse_str(str) {
+  if(type_of(str) != 'string') {
+    println('[ERROR] expected string type');
+    return;
+  }
+
+  let i = 0;
+  let j = len(str) - 1;
+  let temp = '';
+
+  for ;i != j; {
+    temp = str[i];
+    str[i] = str[j];
+    str[j] = temp;
+
+    i += 1;
+    j -= 1;
+  }
+}
+
+reverse_str(l);
+println(l);

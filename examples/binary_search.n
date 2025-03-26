@@ -1,0 +1,27 @@
+# algorithm for binary search in eta
+func search(arr, left, right, key) {
+  if left > right {
+    return -1;
+  }
+
+  let mid = (left + right)/2;
+  if arr[mid] == key {
+    return mid;
+  }
+
+  if key < arr[mid] {
+    return search(arr, left, mid - 1, key);
+  }
+
+  return search(arr, mid + 1, right, key);
+}
+
+let key = 1;
+let arr = [1, 2, 3, 4, 5];
+let pos = search(arr, 0, len(arr) - 1, key);
+
+if pos == -1 {
+  println('item not found');
+} else {
+  println('item found at position: ', pos);
+}
