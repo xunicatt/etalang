@@ -1,7 +1,7 @@
 project(
   'eta',
   'cpp',
-  version: 'v0.0.1',
+  version: 'v0.0.2',
   default_options: [
     'cpp_std=c++23',
     'cpp_flags=-Wall -Wextra -Werror',

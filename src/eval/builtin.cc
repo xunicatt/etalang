@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <eval.h>
 #include <gc.h>
 #include <iostream>
@@ -424,6 +425,7 @@ bread_string(const std::vector<ObjectRef>& args) {
   }
 
   std::string value;
+  std::cin.ignore();
   std::getline(std::cin, value);
   ObjectRef res = gc::alloc();
   res->type = ObjectType::STRING;

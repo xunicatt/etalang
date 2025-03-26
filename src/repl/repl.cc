@@ -15,7 +15,7 @@
 constexpr std::string_view HELPER = "etalang repl -- type '.help' for help";
 constexpr std::string NAME = "repl";
 constexpr std::string_view PROMPT = ">> ";
-constexpr std::string_view VERSION_STR = "v0.0.1";
+constexpr std::string_view VERSION_STR = "v0.0.2";
 
 #ifdef GC_DEBUG_INFO_ENABLE
   #define GC_MSG ".gc    --- garbage collector\n"

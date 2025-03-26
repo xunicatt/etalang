@@ -16,7 +16,7 @@ main(int argc, char* argv[]) {
   }
 
   if(argv[1] == std::string("--version")) {
-    std::println("v0.0.1");
+    std::println("v0.0.2");
     return 0;
   }
 
