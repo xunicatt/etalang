@@ -1,6 +1,6 @@
 # algorithm for generating nth number in fibo series in eta
 func fibo(n) {
-  if n <= 1 {
+  if(n <= 1) {
     return n;
   }
 

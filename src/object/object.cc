@@ -1,3 +1,4 @@
+#include "token.h"
 #include <cstddef>
 #include <format>
 #include <object.h>
@@ -16,6 +17,8 @@ static const char* const objectstr[__OBJECTTYPECOUNT__]  = {
   "bool",
   "string",
   "array",
+  "struct",
+  "",
   "return value",
   "error",
   "error",
@@ -135,6 +138,34 @@ to_string(const Array& a) {
   }
   arrval += "]";
   return arrval;
+}
+
+std::string
+to_string(const Struct& s) {
+  using token::Token;
+
+  std::string fields = "{";
+  size_t i = 0;
+  for(const auto& [k, v]: s.fields) {
+    fields += k + ": " + v;
+    fields += i < s.fields.size() - 1 ? ", " : "";
+    i++;
+  }
+  fields += "}";
+  return s.name + fields;
+}
+
+std::string
+to_string(const StructVal& s) {
+  std::string fields = "{";
+  size_t i = 0;
+  for(const auto& [k, v]: s.fields) {
+    fields += k + ": " + v->value();
+    fields += i < s.fields.size() - 1 ? ", " : "";
+    i++;
+  }
+  fields += "}";
+  return std::get<Struct>(s.parent->child).name + fields;
 }
 
 std::string

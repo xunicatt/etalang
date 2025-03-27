@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <format>
+#include <iterator>
 #include <print>
 #include <pthread.h>
 #include <scope.h>
@@ -9,6 +10,7 @@
 #include <lexer.h>
 #include <eval.h>
 #include <gc.h>
+#include <sstream>
 #include <string>
 #include <token.h>
 #include <utility>
@@ -82,12 +84,38 @@ Eval::stmt(const ast::StmtRef& stmt, Scope& scp) {
     case StmtType::FUNCTIONSTMT:
       return func_stmt(std::get<ast::FunctionStmt>(stmt->child), scp);
 
+    case StmtType::STRUCTSTMT:
+      return struct_stmt(std::get<ast::StructStmt>(stmt->child), scp);
+
     case StmtType::EXTERNSTMT:
       return extern_stmt(std::get<ast::ExternStmt>(stmt->child), scp);
 
     default:
       return OBJECT_NULL;
   }
+}
+
+ObjectRef
+Eval::struct_stmt(ast::StructStmt& stmt, Scope& scp) {
+  if(scp.exists(stmt.name->value) || builtinfns.contains(stmt.name->value)) {
+    return derr(stmt.name->location, "redefinition of variable");
+  }
+
+  const std::string& name = stmt.name->value;
+  std::map<std::string, std::string> fields;
+
+  for(size_t i = 0; i < stmt.names.size(); i++) {
+    fields[stmt.names[i]->value] = stmt.types[i]->value;
+  }
+
+  ObjectRef res = gc::alloc();
+  res->type = ObjectType::STRUCT;
+  res->child = Struct{
+    .name = name,
+    .fields = fields
+  };
+
+  return scp.set(name, res);
 }
 
 ObjectRef
@@ -302,6 +330,9 @@ Eval::expr(const ast::ExprRef& _expr, Scope& scp) {
     case ExprType::ARRAYLIT:
       return array_lit(std::get<ast::ArrayLit>(_expr->child), scp);
 
+    case ExprType::STRUCTLIT:
+      return struct_lit(std::get<ast::StructLit>(_expr->child), scp);
+
     case ExprType::IDENTEXPR:
       return ident_expr(std::get<ast::Identifier>(_expr->child), scp);
 
@@ -322,6 +353,9 @@ Eval::expr(const ast::ExprRef& _expr, Scope& scp) {
 
     case ExprType::CALLEXP:
       return call_expr(std::get<ast::CallExpr>(_expr->child), scp);
+
+    case ExprType::MEMBEREXP:
+      return member_expr(std::get<ast::MemberExpr>(_expr->child), scp);
 
     default:
       return OBJECT_NULL;
@@ -680,6 +714,84 @@ Eval::array_lit(const ast::ArrayLit& a, Scope& scp) {
 }
 
 ObjectRef
+Eval::struct_lit(const ast::StructLit& s, Scope& scp) {
+  ObjectRef obj = expr(s.name, scp);
+  if(obj->type != ObjectType::STRUCT) {
+    return derr(ast::location(s.name), "expected 'struct' type");
+  }
+
+  const Struct& struct_obj = std::get<Struct>(obj->child);
+  std::map<std::string, ObjectRef> fields;
+  for(size_t i = 0; i < s.names.size(); i++) {
+    if(!struct_obj.fields.contains(s.names[i]->value)) {
+      return derr(
+        s.names[i]->location,
+        std::format(
+          "struct '{}' contains no field named '{}'",
+          struct_obj.name,
+          s.names[i]->value
+        )
+      );
+    }
+
+    ObjectRef val = expr(s.value[i], scp);
+    if(auto err = derr(ast::location(s.value[i]), val); is_err(err)) {
+      return err;
+    }
+
+    std::string type_name = to_string(val->type);
+    if(val->type == ObjectType::STRUCTVAL) {
+      type_name = std::get<Struct>(std::get<StructVal>(val->child).parent->child).name;
+    }
+
+    if(struct_obj.fields.at(s.names[i]->value) != type_name) {
+      return derr(
+        s.names[i]->location,
+        std::format(
+          "expected type '{}' but got '{}'",
+          struct_obj.fields.at(s.names[i]->value),
+          type_name
+        )
+      );
+    }
+
+    fields[s.names[i]->value] = val;
+  }
+
+  std::vector<std::string> uninit_f;
+  for(const auto& [k, v]: struct_obj.fields) {
+    if(!fields.contains(k)) {
+      uninit_f.push_back(k);
+    }
+  }
+
+  if(uninit_f.size() > 0) {
+    std::stringstream ss;
+    std::copy(
+      uninit_f.begin(),
+      uninit_f.end(),
+      std::ostream_iterator<std::string>(ss, ", ")
+    );
+
+    return derr(
+      ast::location(s.name),
+      std::format(
+        "uninitialized fields: '{}'",
+        ss.str()
+      )
+    );
+  }
+
+  ObjectRef res = gc::alloc();
+  res->type = ObjectType::STRUCTVAL;
+  res->child = StructVal{
+    .parent = obj,
+    .fields = fields
+  };
+  return res;
+}
+
+ObjectRef
 Eval::ident_expr(const ast::Identifier& ident, Scope& scp) {
   if(scp.exists_any(ident.value)) {
     return scp.get(ident.value);
@@ -690,6 +802,41 @@ Eval::ident_expr(const ast::Identifier& ident, Scope& scp) {
   }
 
   return derr(ident.location, "undefined identifier");
+}
+
+ObjectRef
+Eval::assignment_member(const ast::MemberExpr& _expr, const ast::ExprRef& right, Scope& scp) {
+  ObjectRef obj = expr(_expr.left, scp);
+  if(obj->type != ObjectType::STRUCTVAL) {
+    return derr(ast::location(_expr.left), "expected a 'struct' instance type");
+  }
+
+  StructVal& sv = std::get<StructVal>(obj->child);
+  if(!sv.fields.contains(_expr.field->value)) {
+    return derr(
+      _expr.field->location,
+      std::format(
+        "struct '{}' has no field named '{}'",
+        std::get<Struct>(sv.parent->child).name,
+        _expr.field->value
+      )
+    );
+  }
+
+  ObjectRef val = expr(right, scp);
+  if(val->type != sv.fields.at(_expr.field->value)->type) {
+    return derr(
+      _expr.field->location,
+      std::format(
+        "expected type '{}' but got '{}'",
+        to_string(sv.fields.at(_expr.field->value)->type),
+        to_string(val->type)
+      )
+    );
+  }
+
+  sv.fields[_expr.field->value] = val;
+  return obj;
 }
 
 ObjectRef
@@ -811,6 +958,13 @@ Eval::assignment_expr(const ast::AssignmentExpr& _expr, Scope& scp) {
     case ExprType::IDENTEXPR:
       return assignment_ident(
         std::get<ast::Identifier>(_expr.left->child),
+        _expr.right,
+        scp
+      );
+
+    case ExprType::MEMBEREXP:
+      return assignment_member(
+        std::get<ast::MemberExpr>(_expr.left->child),
         _expr.right,
         scp
       );
@@ -1085,6 +1239,13 @@ Eval::efunc(
       return err;
     }
 
+    if(obj->type == ObjectType::STRUCTVAL) {
+      return derr(
+        ast::location(params[i]),
+        "passing 'struct' type to external function is not implemented yet"
+      );
+    }
+
     if(!is_variadic || (is_variadic && _func.argstypes.size() - 1 > i)) {
       if(token_to_object_type(_func.argstypes[i]) != obj->type) {
         return derr(
@@ -1205,6 +1366,28 @@ Eval::call_expr(const ast::CallExpr& _expr, Scope& scp) {
   }
 
   return retval;
+}
+
+ObjectRef
+Eval::member_expr(const ast::MemberExpr& _expr, Scope& scp) {
+  ObjectRef obj = expr(_expr.left, scp);
+  if(obj->type != ObjectType::STRUCTVAL) {
+    return derr(ast::location(_expr.left), "expected a 'struct' instance type");
+  }
+
+  const StructVal& s = std::get<StructVal>(obj->child);
+  if(!s.fields.contains(_expr.field->value)) {
+    return derr(
+      _expr.field->location,
+      std::format(
+        "struct '{}' has no field named '{}'",
+        std::get<Struct>(s.parent->child).name,
+        _expr.field->value
+      )
+    );
+  }
+
+  return s.fields.at(_expr.field->value);
 }
 
 bool

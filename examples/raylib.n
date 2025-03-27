@@ -13,7 +13,7 @@ let screenHeight = 450;
 InitWindow(screenWidth, screenHeight, 'raylib [core] example - basic window');
 SetTargetFPS(60);
 
-for ;!WindowShouldClose(); {
+for(;!WindowShouldClose();) {
   BeginDrawing();
   EndDrawing();
 }

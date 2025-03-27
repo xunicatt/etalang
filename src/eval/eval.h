@@ -24,6 +24,7 @@ public:
 
 private:
   ObjectRef stmt(const ast::StmtRef&, Scope&);
+  ObjectRef struct_stmt(ast::StructStmt&, Scope&);
   ObjectRef let_stmt(const ast::LetStmt&, Scope&);
   ObjectRef return_stmt(const ast::ReturnStmt&, Scope&);
   ObjectRef if_stmt(const ast::IfStmt&, Scope&);
@@ -42,15 +43,18 @@ private:
   ObjectRef bool_lit(const ast::BoolLit&);
   ObjectRef string_lit(const ast::StringLit&);
   ObjectRef array_lit(const ast::ArrayLit&, Scope&);
+  ObjectRef struct_lit(const ast::StructLit&, Scope&);
 
   ObjectRef ident_expr(const ast::Identifier&, Scope&);
   ObjectRef assignment_ident(const ast::Identifier&, const ast::ExprRef&, Scope&);
+  ObjectRef assignment_member(const ast::MemberExpr&, const ast::ExprRef&, Scope&);
   ObjectRef assignment_array(ObjectRef&, const ast::ExprRef&, const ast::ExprRef&, Scope&);
   ObjectRef assignment_string(ObjectRef&, const ast::ExprRef&, const ast::ExprRef&, Scope&);
   ObjectRef assignment_expr(const ast::AssignmentExpr&, Scope&);
   ObjectRef opassignment_expr(ast::OpAssignmentExpr&, Scope&);
   ObjectRef index_expr(const ast::IndexExpr&, Scope&);
   ObjectRef call_expr(const ast::CallExpr&, Scope&);
+  ObjectRef member_expr(const ast::MemberExpr&, Scope&);
 
   ObjectRef func(const Func&, const Location&, const std::vector<ast::ExprRef>&, Scope&);
   ObjectRef bfunc(const BFunc&, const Location&, const std::vector<ast::ExprRef>&, Scope&);

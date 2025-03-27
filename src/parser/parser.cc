@@ -43,7 +43,9 @@ static const std::map<Token, parser::Precedence> precedences = {
   {Token::DIV, Precedence::PRODUCT},
   {Token::MUL, Precedence::PRODUCT},
   {Token::LPAREN, Precedence::CALL},
+  {Token::LCURLY, Precedence::CALL},
   {Token::LSQR, Precedence::INDEX},
+  {Token::DOT, Precedence::INDEX},
 };
 
 static const std::map<Token, Token> opassignment = {
@@ -57,13 +59,6 @@ static inline bool
 is_a_type(Token t) {
   return t == Token::INT || t == Token::FLOAT  ||
           t == Token::BOOL || t == Token::STRING;
-}
-
-static inline bool
-is_semicolon_req(const ast::StmtRef& s) {
-  if(s == nullptr) return false;
-  StmtType type = s->type;
-  return type != StmtType::IFSTMT && type != StmtType::FORSTMT && type != StmtType::FUNCTIONSTMT;
 }
 
 Parser::Parser(Lexer& lexer)
@@ -93,6 +88,7 @@ Parser::Parser(Lexer& lexer)
   binaryfns[Token::GRT] = binary_expr;
   binaryfns[Token::GRE] = binary_expr;
 
+  binaryfns[Token::LCURLY] = TO_BINARY_FN(struct_lit);
   binaryfns[Token::ASS] = TO_BINARY_FN(assignment_expr);
   binaryfns[Token::ADAS] = TO_BINARY_FN(opassignment_expr);
   binaryfns[Token::SBAS] = TO_BINARY_FN(opassignment_expr);
@@ -100,6 +96,7 @@ Parser::Parser(Lexer& lexer)
   binaryfns[Token::DVAS] = TO_BINARY_FN(opassignment_expr);
   binaryfns[Token::LSQR] = TO_BINARY_FN(index_expr);
   binaryfns[Token::LPAREN] = TO_BINARY_FN(call_expr);
+  binaryfns[Token::DOT] = TO_BINARY_FN(member_expr);
 }
 
 const std::vector<std::string>&
@@ -152,16 +149,16 @@ Parser::stmt() {
     break;
 
   case Token::IF:
-    stmt = if_stmt();
-    break;
+    return if_stmt();
 
   case Token::FOR:
-    stmt = for_stmt();
-    break;
+    return for_stmt();
+
+  case Token::STRUCT:
+    return struct_stmt();
 
   case Token::FUNC:
-    stmt = func_stmt();
-    break;
+    return func_stmt();
 
   case Token::EXTERN:
     stmt = extern_stmt();
@@ -171,15 +168,97 @@ Parser::stmt() {
     stmt = expr_stmt();
   }
 
-  if(is_semicolon_req(stmt)) {
-    if(lexer.peek_token() != Token::SEMICOLON) {
-      error("expected ;");
-      return nullptr;
-    }
-    lexer.next_token();
+  if(lexer.peek_token() != Token::SEMICOLON) {
+    error("expected ;");
+    return nullptr;
   }
+  lexer.next_token();
 
   return stmt;
+}
+
+ast::StmtRef
+Parser::struct_stmt() {
+  if(lexer.peek_token() != Token::IDENTIFIER) {
+    error("expected identifier");
+    return nullptr;
+  }
+
+  lexer.next_token();
+  ast::IdentifierRef name = std::make_unique<ast::Identifier>(ast::Identifier{
+    .location = lexer.last_location(),
+    .value = std::get<std::string>(lexer.get_value())
+  });
+
+  if(lexer.peek_token() != Token::LCURLY) {
+    error("expected {");
+    return nullptr;
+  }
+  lexer.next_token();
+
+  std::vector<ast::IdentifierRef> types;
+  std::vector<ast::IdentifierRef> names;
+  if(lexer.peek_token() != Token::RCURLY) {
+    while(true) {
+      if(lexer.peek_token() != Token::IDENTIFIER) {
+        error("expected an identifier");
+        return nullptr;
+      }
+
+      lexer.next_token();
+      names.push_back(
+        std::make_unique<ast::Identifier>(ast::Identifier{
+          .location = lexer.last_location(),
+          .value = std::get<std::string>(lexer.get_value())
+        })
+      );
+
+      if(lexer.peek_token() != Token::COLON) {
+        error("expected :");
+        return nullptr;
+      }
+      lexer.next_token();
+
+      if(!is_a_type(lexer.peek_token()) && lexer.peek_token() != Token::IDENTIFIER) {
+        error("expected a type");
+        return nullptr;
+      }
+      lexer.next_token();
+
+      types.push_back(
+        std::make_unique<ast::Identifier>(ast::Identifier{
+          .location = lexer.last_location(),
+          .value = std::get<std::string>(lexer.get_value())
+        })
+      );
+
+      if(lexer.peek_token() == Token::RCURLY) {
+        break;
+      }
+
+      if(lexer.peek_token() != Token::COMMA) {
+        error("expected , or }");
+        return nullptr;
+      }
+
+      lexer.next_token();
+    }
+  }
+
+  if(lexer.peek_token() != Token::RCURLY) {
+    error("expected }");
+    return nullptr;
+  }
+  lexer.next_token();
+
+  return std::make_unique<ast::Stmt>(ast::Stmt{
+    .type = StmtType::STRUCTSTMT,
+    .child = ast::StructStmt{
+      .name = std::move(name),
+      .types = std::move(types),
+      .names = std::move(names),
+    }
+  });
 }
 
 ast::StmtRef
@@ -235,12 +314,23 @@ Parser::return_stmt() {
 
 ast::StmtRef
 Parser::if_stmt() {
+  if(lexer.peek_token() != Token::LPAREN) {
+    error("expected (");
+    return nullptr;
+  }
   lexer.next_token();
 
+  lexer.next_token();
   ast::ExprRef condition = expr(Precedence::LOWEST);
   if(condition == nullptr) {
     return nullptr;
   }
+
+  if(lexer.peek_token() != Token::RPAREN) {
+    error("expected )");
+    return nullptr;
+  }
+  lexer.next_token();
 
   if(lexer.peek_token() != Token::LCURLY) {
     error("expected {");
@@ -281,6 +371,12 @@ Parser::if_stmt() {
 ast::StmtRef
 Parser::for_stmt() {
   ast::StmtRef pre;
+  if(lexer.peek_token() != Token::LPAREN) {
+    error("expected (");
+    return nullptr;
+  }
+  lexer.next_token();
+
   if(lexer.peek_token() != Token::SEMICOLON) {
     lexer.next_token();
     if((pre = stmt()) == nullptr) {
@@ -306,12 +402,18 @@ Parser::for_stmt() {
   lexer.next_token();
 
   ast::ExprRef post;
-  if(lexer.peek_token() != Token::LCURLY) {
+  if(lexer.peek_token() != Token::RPAREN) {
     lexer.next_token();
     if((post = expr(Precedence::LOWEST)) == nullptr) {
       return nullptr;
     }
   }
+
+  if(lexer.peek_token() != Token::RPAREN) {
+    error("expected )");
+    return nullptr;
+  }
+  lexer.next_token();
 
   if(lexer.peek_token() != Token::LCURLY) {
     error("expected {");
@@ -746,6 +848,63 @@ Parser::array_lit() {
 }
 
 ast::ExprRef
+Parser::struct_lit(ast::ExprRef name) {
+  std::vector<ast::ExprRef> values;
+  std::vector<ast::IdentifierRef> names;
+  if(lexer.peek_token() != Token::RCURLY) {
+    while(true) {
+      if(lexer.peek_token() != Token::IDENTIFIER) {
+        error("expected an identifier");
+        return nullptr;
+      }
+
+      lexer.next_token();
+      names.push_back(
+        std::make_unique<ast::Identifier>(ast::Identifier{
+          .location = lexer.last_location(),
+          .value = std::get<std::string>(lexer.get_value())
+        })
+      );
+
+      if(lexer.peek_token() != Token::COLON) {
+        error("expected :");
+        return nullptr;
+      }
+      lexer.next_token();
+      lexer.next_token();
+
+      values.push_back(expr(Precedence::LOWEST));
+
+      if(lexer.peek_token() == Token::RCURLY) {
+        break;
+      }
+
+      if(lexer.peek_token() != Token::COMMA) {
+        error("expected , or }");
+        return nullptr;
+      }
+
+      lexer.next_token();
+    }
+  }
+
+  if(lexer.peek_token() != Token::RCURLY) {
+    error("expected }");
+    return nullptr;
+  }
+
+  lexer.next_token();
+  return std::make_unique<ast::Expr>(ast::Expr{
+    .type = ExprType::STRUCTLIT,
+    .child = ast::StructLit{
+      .name = std::move(name),
+      .names = std::move(names),
+      .value = std::move(values)
+    }
+  });
+}
+
+ast::ExprRef
 Parser::ident_expr() {
   return std::make_unique<ast::Expr>(ast::Expr{
     .type = ExprType::IDENTEXPR,
@@ -836,6 +995,28 @@ Parser::call_expr(ast::ExprRef left) {
     .child = ast::CallExpr{
       .function = std::move(left),
       .arguments = std::move(*arguments)
+    }
+  });
+}
+
+ast::ExprRef
+Parser::member_expr(ast::ExprRef left) {
+  if(lexer.peek_token() != Token::IDENTIFIER) {
+    error("expected identifier");
+    return nullptr;
+  }
+
+  lexer.next_token();
+  ast::IdentifierRef field = std::make_unique<ast::Identifier>(ast::Identifier{
+    .location = lexer.last_location(),
+    .value = std::get<std::string>(lexer.get_value())
+  });
+
+  return std::make_unique<ast::Expr>(ast::Expr{
+    .type = ExprType::MEMBEREXP,
+    .child = ast::MemberExpr{
+      .left = std::move(left),
+      .field = std::move(field)
     }
   });
 }

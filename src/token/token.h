@@ -24,6 +24,7 @@ enum Token {
   EXTERN,
   FUNC,
   NULL_,
+  STRUCT,
 
   // values
   INTLIT,

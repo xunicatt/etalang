@@ -174,10 +174,16 @@ btype_of(const std::vector<ObjectRef>& args) {
     );
   }
 
+  const ObjectRef& obj = args.front();
+  std::string value = to_string(obj->type);
+  if(obj->type == ObjectType::STRUCTVAL) {
+    value = std::get<Struct>(std::get<StructVal>(obj->child).parent->child).name;
+  }
+
   ObjectRef res = gc::alloc();
   res->type = ObjectType::STRING;
   res->child = String{
-    .value = to_string(args.front()->type)
+    .value = value
   };
   return res;
 }

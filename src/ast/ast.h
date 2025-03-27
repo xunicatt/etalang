@@ -27,6 +27,7 @@ enum ExprType {
   BOOLLIT,
   STRINGLIT,
   ARRAYLIT,
+  STRUCTLIT,
 
   UNARYEXP,
   BINARYEXP,
@@ -36,12 +37,14 @@ enum ExprType {
 
   CALLEXP,
   INDEXEXP,
+  MEMBEREXP,
   __EXPRNODECOUNT__,
 };
 
 // stmt node type
 enum StmtType {
-  LETSTMT = 0,
+  STRUCTSTMT = 0,
+  LETSTMT,
   BLOCKSTMT,
   RETURNSTMT,
   EXPRESSIONSTMT,
@@ -100,6 +103,13 @@ struct ArrayLit {
   std::vector<ExprRef> elements;
 };
 
+struct StructLit {
+  Location location;
+  ExprRef name;
+  std::vector<IdentifierRef> names;
+  std::vector<ExprRef> value;
+};
+
 //====================================================
 // EXPRESSIONS
 struct UnaryExpr {
@@ -140,6 +150,12 @@ struct OpAssignmentExpr {
   ExprRef right;
 };
 
+struct MemberExpr {
+  Location location;
+  ExprRef left;
+  IdentifierRef field;
+};
+
 using ExprChild = std::variant<
   Identifier,
   NullLit,
@@ -148,12 +164,14 @@ using ExprChild = std::variant<
   BoolLit,
   StringLit,
   ArrayLit,
+  StructLit,
   UnaryExpr,
   BinaryExpr,
   AssignmentExpr,
   CallExpr,
   IndexExpr,
-  OpAssignmentExpr
+  OpAssignmentExpr,
+  MemberExpr
 >;
 
 struct Expr {
@@ -163,6 +181,12 @@ struct Expr {
 
 //====================================================
 // STATEMENTS
+struct StructStmt {
+  IdentifierRef name;
+  std::vector<IdentifierRef> types;
+  std::vector<IdentifierRef> names;
+};
+
 struct LetStmt {
   IdentifierRef name;
   ExprRef value;
@@ -207,6 +231,7 @@ struct ExprStmt {
 };
 
 using StmtChild = std::variant<
+  StructStmt,
   LetStmt,
   ReturnStmt,
   IfStmt,

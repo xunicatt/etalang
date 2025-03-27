@@ -16,6 +16,7 @@
 #include <vector>
 #include <token.h>
 #include <ast.h>
+#include <map>
 
 enum ObjectType {
   NULL_ = 0,
@@ -24,6 +25,8 @@ enum ObjectType {
   BOOL,
   STRING,
   ARRAY,
+  STRUCT,
+  STRUCTVAL,
   RETVAL,
   SERR,
   DERR,
@@ -79,6 +82,16 @@ struct Array {
   std::vector<ObjectRef> elements;
 };
 
+struct Struct {
+  std::string name;
+  std::map<std::string, std::string> fields;
+};
+
+struct StructVal {
+  ObjectRef parent;
+  std::map<std::string, ObjectRef> fields;
+};
+
 struct RetVal {
   ObjectRef value;
 };
@@ -109,6 +122,8 @@ using ObjectChild = std::variant<
   Bool,
   String,
   Array,
+  Struct,
+  StructVal,
   RetVal,
   Func,
   BFunc,

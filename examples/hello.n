@@ -9,7 +9,7 @@ let m = null; # only one single time assignment
 
 # branch
 print('enter a number: ');
-if i > 100 {
+if(i > 100) {
   i += 100;
   m = read_float();
 } else {
@@ -28,9 +28,39 @@ println(m, ' type of m: ', type_of(m));
 let arr_1 = [];
 let arr_2 = [];
 
+# struct
+struct Student {
+  id: int,
+  name: string
+}
+
+let john = Student{id: 123, name: 'John'};
+println(john);
+
+struct StudentGrade {
+  s: Student,
+  cgpa: float
+}
+
+let johns_grade = StudentGrade{
+  s: john,
+  cgpa: 8.7
+};
+
+let julians_grade = StudentGrade{
+  s: Student{
+    name: 'Julian',
+    id: 456
+  },
+  cgpa: 8.7
+};
+
+println(johns_grade);
+println(julians_grade);
+
 # function
 func range(arr, start, end) {
-  for let i = start; i < end; i += 1 {
+  for(let i = start; i < end; i += 1) {
     push(arr, i);
   }
 }
@@ -55,7 +85,7 @@ func reverse_str(str) {
   let j = len(str) - 1;
   let temp = '';
 
-  for ;i != j; {
+  for(;i != j;) {
     temp = str[i];
     str[i] = str[j];
     str[j] = temp;

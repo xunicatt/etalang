@@ -6,16 +6,16 @@ func swap(arr, i, j) {
 }
 
 func sort(arr) {
-  for let i = 0; i < len(arr) - 1; i += 1 {
+  for(let i = 0; i < len(arr) - 1; i += 1) {
     let swapped = false;
-    for let j = 0; j < len(arr) - i - 1; j += 1 {
-      if arr[j] > arr[j + 1] {
+    for(let j = 0; j < len(arr) - i - 1; j += 1) {
+      if(arr[j] > arr[j + 1]) {
         swap(arr, j, j + 1);
         swapped = true;
       }
     }
 
-    if !swapped {
+    if(!swapped) {
       return;
     }
   }
@@ -25,11 +25,11 @@ print('size: ');
 let size = read_int();
 
 let arr = [];
-for let i = 0; i < size; i += 1 {
+for(let i = 0; i < size; i += 1) {
   print('element ', i, ': ');
   push(arr, read_int());
 }
 
-println('entered array: ', arr);
+println(arr);
 sort(arr);
-println('sorted array: ', arr);
+println(arr);

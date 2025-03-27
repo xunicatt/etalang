@@ -1,14 +1,14 @@
 # algorithm for checking if a string is palindrome in eta
 func is_palindrome(str) {
-  if len(str) == 0 {
+  if(len(str) == 0) {
     return true;
   }
 
   let i = 0;
   let j = len(str) - 1;
 
-  for ;i != j; {
-    if str[i] != str[j] {
+  for(;i != j;) {
+    if(str[i] != str[j]) {
       return false;
     }
 

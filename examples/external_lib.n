@@ -1,13 +1,13 @@
 let libc = null;
 let libm = null;
 
-if os() == 'linux' {
+if(os() == 'linux') {
   libc = lib('libc.so.6');
   libm = lib('libm.so.6');
 }
 
-if os() == 'darwin' {
-  libc = load('libSystem.B.dylib');
+if(os() == 'darwin') {
+  libc = lib('libSystem.B.dylib');
   libm = libc;
 }
 

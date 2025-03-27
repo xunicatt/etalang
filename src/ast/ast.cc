@@ -16,6 +16,7 @@ namespace ast {
     "bool",
     "string",
     "array",
+    "struct",
 
     "unary",
     "binary",
@@ -25,9 +26,11 @@ namespace ast {
 
     "call",
     "index",
+    "member",
   };
 
   static const char* stmtstr[__STMTNODECOUNT__] = {
+    "struct",
     "let",
     "block",
     "return",
@@ -97,6 +100,23 @@ namespace ast {
     }
     str += "]}";
     return str;
+  }
+
+  static std::string
+  to_string(const StructLit& sl) {
+    std::string fields = "{";
+    for(size_t i = 0; i < sl.names.size(); i++) {
+      fields += to_string(sl.names[i]) + ": " + to_string(sl.value[i]);
+      fields += i < sl.names.size() - 1 ? ", " : "";
+    }
+    fields += "}";
+
+    return std::format(
+      "{{{}: {{name: {}, fields: {}}}}}",
+      to_string(STRUCTSTMT),
+      to_string(sl.name),
+      fields
+    );
   }
 
   static inline std::string
@@ -169,10 +189,37 @@ namespace ast {
   }
 
   static inline std::string
+  to_string(const MemberExpr& oe) {
+    return std::format(
+      "{{{}: {{left: {}, right: {}}}}}",
+      to_string(MEMBEREXP),
+      to_string(oe.left),
+      to_string(oe.field)
+    );
+  }
+
+
+  static inline std::string
   to_string(const ExprRef& er) {
     return std::visit([](const auto& child) { return to_string(child);}, er->child);
   }
+  static inline std::string
 
+  to_string(const StructStmt& ss) {
+    std::string fields = "[";
+    for(size_t i = 0; i < ss.names.size(); i++) {
+      fields += to_string(ss.names[i]) + ": " + std::string(to_string(ss.types[i]));
+      fields += i < ss.names.size() - 1 ? ", " : "";
+    }
+    fields += "]";
+
+    return std::format(
+      "{{{}: {{name: {}, fields: {}}}}}",
+      to_string(STRUCTSTMT),
+      to_string(ss.name),
+      fields
+    );
+  }
   static inline std::string
   to_string(const LetStmt& ls) {
     return std::format(

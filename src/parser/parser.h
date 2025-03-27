@@ -40,6 +40,7 @@ private:
   inline void error(const std::string&);
   inline void error(const std::string&, const Location&);
   ast::StmtRef stmt();
+  ast::StmtRef struct_stmt();
   ast::StmtRef let_stmt();
   ast::StmtRef return_stmt();
   ast::StmtRef if_stmt();
@@ -62,12 +63,14 @@ private:
   ast::ExprRef bool_lit();
   ast::ExprRef string_lit();
   ast::ExprRef array_lit();
+  ast::ExprRef struct_lit(ast::ExprRef);
 
   ast::ExprRef ident_expr();
   ast::ExprRef assignment_expr(ast::ExprRef);
   ast::ExprRef opassignment_expr(ast::ExprRef);
   ast::ExprRef index_expr(ast::ExprRef);
   ast::ExprRef call_expr(ast::ExprRef);
+  ast::ExprRef member_expr(ast::ExprRef);
 
   Precedence peek_precedence();
   Precedence current_precedence();

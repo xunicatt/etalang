@@ -27,6 +27,7 @@ static const std::map<std::string_view, Token> keywords = {
   {"bool", Token::BOOL},
   {"string", Token::STRING},
   {"null", Token::NULL_},
+  {"struct", Token::STRUCT},
 };
 
 static const std::map<char, Token> specialchars = {
@@ -130,8 +131,9 @@ Lexer::next_token_() {
     }
 
     std::string ident = data.substr(lastloc.cursor, loc.cursor - lastloc.cursor);
+    _value = ident;
+
     if(!keywords.contains(ident)) {
-      _value = std::string(ident);
       return Token::IDENTIFIER;
     }
 

@@ -12,6 +12,7 @@ namespace token {
     "extern",
     "function",
     "null",
+    "struct",
 
     "int",
     "float",
