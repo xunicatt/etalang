@@ -66,7 +66,7 @@ func range(arr, start, end) {
 }
 
 range(arr_1, 0, 5); # mutates the array
-range(slice(arr_2), 0, 5); # slice create a new copy and passes it
+range(clone(arr_2), 0, 5); # clone create a new copy and passes it
 
 println(arr_1, ' ', arr_2);
 arr_2 = slice(arr_1, 0, len(arr_1) - 2);

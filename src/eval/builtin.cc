@@ -1,4 +1,3 @@
-#include <cstdio>
 #include <eval.h>
 #include <gc.h>
 #include <iostream>
@@ -37,6 +36,7 @@ static ObjectRef bslice(const std::vector<ObjectRef>&);
 static ObjectRef bread_int(const std::vector<ObjectRef>&);
 static ObjectRef bread_float(const std::vector<ObjectRef>&);
 static ObjectRef bread_string(const std::vector<ObjectRef>&);
+static ObjectRef bclone(const std::vector<ObjectRef>&);
 
 static Object BFUNC_LEN_OBJECT = MAKE_BFUNC_OBJ(blen);
 static Object BFUNC_OS_OBJECT = MAKE_BFUNC_OBJ(bos);
@@ -52,6 +52,7 @@ static Object BFUNC_SLICE_OBJECT = MAKE_BFUNC_OBJ(bslice);
 static Object BFUNC_READ_INT_OBJECT = MAKE_BFUNC_OBJ(bread_int);
 static Object BFUNC_READ_FLOAT_OBJECT = MAKE_BFUNC_OBJ(bread_float);
 static Object BFUNC_READ_STRING_OBJECT = MAKE_BFUNC_OBJ(bread_string);
+static Object BFUNC_CLONE_OBJECT = MAKE_BFUNC_OBJ(bclone);
 
 extern const std::map<std::string, ObjectRef> builtinfns = {
   {"len", &BFUNC_LEN_OBJECT},
@@ -68,6 +69,7 @@ extern const std::map<std::string, ObjectRef> builtinfns = {
   {"read_int", &BFUNC_READ_INT_OBJECT},
   {"read_float", &BFUNC_READ_FLOAT_OBJECT},
   {"read_string", &BFUNC_READ_STRING_OBJECT},
+  {"clone", &BFUNC_CLONE_OBJECT},
 };
 
 static ObjectRef
@@ -318,60 +320,47 @@ bpop(const std::vector<ObjectRef>& args) {
 
 static ObjectRef
 bslice(const std::vector<ObjectRef>& args) {
-  if(args.size() > 0) {
-    ObjectRef arr = args.front();
-    if(arr->type != ObjectType::ARRAY) {
-      return serr("exepected 'array' type");
-    }
-
-    switch(args.size()) {
-      case 1: {
-        ObjectRef cpy_arr = gc::alloc();
-        cpy_arr->type = ObjectType::ARRAY;
-        cpy_arr->child = Array{
-          .elements = std::get<Array>(arr->child).elements
-        };
-        return cpy_arr;
-      }
-
-      case 3: {
-        ObjectRef start_obj = args[1];
-        if(start_obj->type != ObjectType::INT) {
-          return serr("expected 'int' type as second argument");
-        }
-
-        ObjectRef end_obj = args[2];
-        if(end_obj->type != ObjectType::INT) {
-          return serr("expected 'int' type as third argument");
-        }
-
-        int64_t start = std::get<Int>(start_obj->child).value;
-        int64_t end = std::get<Int>(end_obj->child).value;
-        auto& elements = std::get<Array>(arr->child).elements;
-
-        if(start < 0 || end > static_cast<int64_t>(elements.size()) || start >= end) {
-          return serr("index out of range or invalid");
-        }
-
-        ObjectRef cpy_arr = gc::alloc();
-        cpy_arr->type = ObjectType::ARRAY;
-        cpy_arr->child = Array{
-          .elements = std::vector<ObjectRef>(elements.begin() + start, elements.begin() + end)
-        };
-        return cpy_arr;
-      }
-    }
+  if(args.size() < 3) {
+    return
+    serr(
+      std::format(
+        "function takes {} arguments but {} were given",
+        3,
+        args.size()
+      )
+    );
   }
 
-  return
-  serr(
-    std::format(
-      "function takes {} or {} arguments but {} were given",
-      1,
-      3,
-      args.size()
-    )
-  );
+  ObjectRef arr = args.front();
+  if(arr->type != ObjectType::ARRAY) {
+    return serr("exepected 'array' type");
+  }
+
+
+  ObjectRef start_obj = args[1];
+  if(start_obj->type != ObjectType::INT) {
+    return serr("expected 'int' type as second argument");
+  }
+
+  ObjectRef end_obj = args[2];
+  if(end_obj->type != ObjectType::INT) {
+    return serr("expected 'int' type as third argument");
+  }
+
+  int64_t start = std::get<Int>(start_obj->child).value;
+  int64_t end = std::get<Int>(end_obj->child).value;
+  auto& elements = std::get<Array>(arr->child).elements;
+
+  if(start < 0 || end > static_cast<int64_t>(elements.size()) || start >= end) {
+    return serr("index out of range or invalid");
+  }
+
+  ObjectRef cpy_arr = gc::alloc();
+  cpy_arr->type = ObjectType::ARRAY;
+  cpy_arr->child = Array{
+    .elements = std::vector<ObjectRef>(elements.begin() + start, elements.begin() + end)
+  };
+  return cpy_arr;
 }
 
 static ObjectRef
@@ -438,5 +427,41 @@ bread_string(const std::vector<ObjectRef>& args) {
   res->child = String{
     .value = value
   };
+  return res;
+}
+
+static ObjectRef
+bclone(const std::vector<ObjectRef>& args) {
+  if(args.size() != 1) {
+    return serr(
+      std::format(
+        "function takes {} arguments but {} were given",
+        1,
+        args.size()
+      )
+    );
+  }
+
+  ObjectRef obj = args.front();
+  ObjectRef res = gc::alloc();
+  res->type = obj->type;
+
+  switch(res->type) {
+    case ObjectType::ARRAY:
+      res->child = std::get<Array>(obj->child);
+      break;
+
+    case ObjectType::STRING:
+      res->child = std::get<String>(obj->child);
+      break;
+
+    case ObjectType::STRUCTVAL:
+      res->child = std::get<StructVal>(obj->child);
+      break;
+
+    default:
+      return obj;
+  }
+
   return res;
 }
