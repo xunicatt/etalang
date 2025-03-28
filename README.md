@@ -49,12 +49,13 @@ eta <filename>.n #for file input
 - print(...): `prints elements to the console`
 - println(...): `same as print() but shift the cursor to new line`
 - len(...): `get the length for string and array type`
-- type_of(...): `returns the type in string, ex: "int", "float", "string", "bool", "function"`
+- type_of(...): `returns the type in string`
 - push(...): `pushes an element into an array`
 - pop(...): `pop an element from array`
-- slice(...): `can be used to copy a array by value or to slice an array, ex: slice(arr, 0, 2)`
+- slice(...): `can be used to slice an array`
 - to_int(...): `typecasts to int`
 - to_float(...): `typecasts to float`
 - read_int(): `reads an integer from stdin`
 - read_float(): `reads an float from stdin`
 - read_string(): `reads an string from stdin`
+- clone(...): `creates an clone of a variable`
